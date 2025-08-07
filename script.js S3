@@ -1,0 +1,103 @@
+const board = document.getElementById('board');
+const statusText = document.getElementById('status');
+const resetButton = document.getElementById('reset');
+
+let currentPlayer = 'X';
+let gameMode = '2P'; // or 'AI'
+let gameActive = true;
+let boardState = Array(9).fill("");
+
+const winPatterns = [
+  [0,1,2], [3,4,5], [6,7,8],
+  [0,3,6], [1,4,7], [2,5,8],
+  [0,4,8], [2,4,6]
+];
+
+function startGame(mode) {
+  gameMode = mode;
+  initBoard();
+}
+
+function initBoard() {
+  board.innerHTML = '';
+  boardState.fill("");
+  gameActive = true;
+  currentPlayer = 'X';
+  statusText.textContent = "Player X's turn";
+
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    cell.dataset.index = i;
+    cell.addEventListener('click', handleCellClick);
+    board.appendChild(cell);
+  }
+}
+
+function handleCellClick(e) {
+  const index = e.target.dataset.index;
+  if (boardState[index] !== '' || !gameActive) return;
+
+  makeMove(index, currentPlayer);
+
+  if (checkWinner()) {
+    statusText.textContent = `Player ${currentPlayer} wins!`;
+    gameActive = false;
+    return;
+  }
+
+  if (boardState.every(cell => cell !== '')) {
+    statusText.textContent = "It's a draw!";
+    gameActive = false;
+    return;
+  }
+
+  currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+
+  if (gameMode === 'AI' && currentPlayer === 'O') {
+    setTimeout(makeAIMove, 500); // slight delay for realism
+  } else {
+    statusText.textContent = `Player ${currentPlayer}'s turn`;
+  }
+}
+
+function makeMove(index, player) {
+  boardState[index] = player;
+  document.querySelectorAll('.cell')[index].textContent = player;
+}
+
+function makeAIMove() {
+  // Basic AI: pick first empty cell
+  const emptyCells = boardState
+    .map((val, idx) => val === '' ? idx : null)
+    .filter(val => val !== null);
+
+  if (emptyCells.length === 0) return;
+
+  const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+  makeMove(randomIndex, 'O');
+
+  if (checkWinner()) {
+    statusText.textContent = `Computer wins!`;
+    gameActive = false;
+    return;
+  }
+
+  if (boardState.every(cell => cell !== '')) {
+    statusText.textContent = "It's a draw!";
+    gameActive = false;
+    return;
+  }
+
+  currentPlayer = 'X';
+  statusText.textContent = "Player X's turn";
+}
+
+function checkWinner() {
+  return winPatterns.some(pattern => {
+    const [a, b, c] = pattern;
+    return boardState[a] && boardState[a] === boardState[b] && boardState[b] === boardState[c];
+  });
+}
+
+resetButton.addEventListener('click', () => initBoard());
